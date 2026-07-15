@@ -25,8 +25,8 @@ allBtn.addEventListener("click", () => {
 
     Promise.all([
         fetchJson("https://jsonplaceholder.typicode.com/users"),
-        // fetchJson("https://jsonplaceholder.typicode.com/posts"),
-        fetchJson("https://jsonplaceholder.typicode.com/posts/99999"),
+        fetchJson("https://jsonplaceholder.typicode.com/posts"),
+        // fetchJson("https://jsonplaceholder.typicode.com/posts/99999"), // Падает ошибка, все запросы отклоняются
         fetchJson("https://jsonplaceholder.typicode.com/todos"),
     ])
         .then(([users, posts, todos]) => {
@@ -70,3 +70,35 @@ allBtn.addEventListener("click", () => {
 //             }
 //         })
 // });
+
+allSettledBtn.addEventListener("click", () => {
+    
+    const fetchJson = (url) => fetch(url)
+        .then(res => {
+            if (!res.ok) throw new HttpError(res.status, res.statusText);
+            return res.json();
+        })
+        .then(data => ({ url, data })) 
+        .catch(err => { 
+            err.url = url; 
+            throw err;
+        });
+
+    Promise.allSettled([
+        fetchJson("https://jsonplaceholder.typicode.com/users"),
+        fetchJson("https://jsonplaceholder.typicode.com/posts/99999"),
+        fetchJson("https://jsonplaceholder.typicode.com/todos"),
+    ])
+        .then((results) => {
+            out.textContent = results.map(result => {
+                if (result.status === "fulfilled") {
+                    const { url, data } = result.value;
+                    return `[УСПЕХ] ${url} -> Элементов: ${data.length}`;
+                } else {
+                    const err = result.reason;
+                    const errMsg = err instanceof HttpError ? `Ошибка HTTP ${err.status}` : err.message;
+                    return `[ОШИБКА] ${err.url} -> ${errMsg}`;
+                }
+            }).join('\n');
+        });
+});
