@@ -30,7 +30,7 @@ allBtn.addEventListener("click", () => {
         fetchJson("https://jsonplaceholder.typicode.com/todos"),
     ])
         .then(([users, posts, todos]) => {
-            console.log(`Пользователей: ${users.length}, постов: "${posts.length}", списков дел: ${todos.length}`)
+            console.log(`Пользователей: ${users.length}, постов: ${posts.length}, списков дел: ${todos.length}`)
             const end = performance.now();
             out.textContent = `Время выполнения: ${end - start} мс.`// Время выполнения: 55.799999952316284 мс.
         })
@@ -58,7 +58,7 @@ allBtn.addEventListener("click", () => {
 //                 .then((todos) => ({ users, posts, todos }));
 //         })
 //         .then(({ users, posts, todos }) => {
-//             console.log(`Пользователей: ${users.length}, постов: "${posts.length}", списков дел: ${todos.length}`)
+//             console.log(`Пользователей: ${users.length}, постов: ${posts.length}, списков дел: ${todos.length}`)
 //             const end = performance.now();
 //             out.textContent = `Время выполнения: ${end - start} мс.` // Время выполнения: 142.19999998807907 мс.
 //         })
@@ -101,4 +101,61 @@ allSettledBtn.addEventListener("click", () => {
                 }
             }).join('\n');
         });
+});
+
+function delay(ms) {
+    return new Promise((resolve, reject) => {
+        setTimeout(() => {
+            reject("время вышло");
+        }, ms);
+    });
+};
+
+raceBtn.addEventListener("click", () => {
+    const fetchJson = (url) => fetch(url).then(res => {
+        if (!res.ok) {
+            throw new HttpError(res.status, res.statusText);
+        }
+        return res.json();
+    });
+
+    Promise.race([
+        fetchJson("https://jsonplaceholder.typicode.com/users"),
+        // delay(6000), // Выдаёт результат запроса
+        delay(1), // Выдаёт ошибку
+    ])
+        .then((users) => {
+            console.log(`Пользователей: ${users.length}`)
+        })
+        .catch((err) => {
+            if (err instanceof HttpError) {
+                throw Error `Ошибка ${err.status}: ${err.message}`;
+            } else {
+                throw Error `Проблема с сетью: ${err.message}`;
+            }
+        })
+});
+
+anyBtn.addEventListener("click", () => {
+    const fetchJson = (url) => fetch(url).then(res => {
+        if (!res.ok) {
+            throw new HttpError(res.status, res.statusText);
+        }
+        return res.json();
+    });
+
+    Promise.any([
+        fetchJson("https://jsonplaceholder.typicode.com/posts/99999"), // Игнорирует, не выдаёт ошибку
+        fetchJson("https://jsonplaceholder.typicode.com/posts"), // Отрабатывает
+    ])
+        .then((posts) => {
+            console.log(`Постов: ${posts.length}`)
+        })
+        .catch((err) => {
+            if (err instanceof HttpError) {
+                throw Error `Ошибка ${err.status}: ${err.message}`;
+            } else {
+                throw Error `Проблема с сетью: ${err.message}`;
+            }
+        })
 });
